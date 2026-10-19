@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atlantic Edge Surf School // Alpha Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans pb-16 min-h-screen selection:bg-emerald-400 selection:text-slate-950">
+
+  <!-- TOP BAR & SAMPLE DATA BADGE -->
+  <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-20 shadow-lg">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <div>
+        <h1 class="font-black text-lg text-emerald-400">Atlantic Edge Surf School</h1>
+        <p class="text-xs text-slate-400">Lahinch, Co. Clare 🏄‍♂️</p>
+      </div>
+      <span class="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+        ⚠️ SAMPLE DATA (8 RECORDS)
+      </span>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="max-w-md mx-auto px-4 mt-4">
+    <div class="grid grid-cols-3 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-center font-black text-sm">
+      <button onclick="switchTab('today')" id="btn-today" class="py-3 rounded-xl bg-emerald-500 text-slate-950 transition active:scale-95">Today</button>
+      <button onclick="switchTab('rebook')" id="btn-rebook" class="py-3 rounded-xl text-slate-400 hover:text-white transition active:scale-95">Rebook</button>
+      <button onclick="switchTab('money')" id="btn-money" class="py-3 rounded-xl text-slate-400 hover:text-white transition active:scale-95">Money</button>
+    </div>
+  </nav>
+
+  <main class="max-w-md mx-auto px-4 mt-4 space-y-4">
+
+    <!-- VIEW 1: TODAY -->
+    <div id="view-today" class="space-y-3">
+      <div class="flex justify-between items-center px-1">
+        <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider">Today's Sessions (8 Active)</h2>
+        <button onclick="cancelAll()" class="text-xs text-red-400 font-bold bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20 hover:bg-red-500/20 active:scale-95 transition">Cancel All (Storm)</button>
+      </div>
+      <div id="today-list" class="space-y-3"></div>
+    </div>
+
+    <!-- VIEW 2: REBOOK -->
+    <div id="view-rebook" class="hidden space-y-3">
+      <div class="px-1">
+        <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider">Rebook Queue & 48h Alerts</h2>
+        <p class="text-xs text-slate-500 mt-1">Bookings unassigned for over 48 hours turn red.</p>
+      </div>
+      <div id="rebook-list" class="space-y-3"></div>
+    </div>
+
+    <!-- VIEW 3: MONEY -->
+    <div id="view-money" class="hidden space-y-4">
+      <div class="px-1">
+        <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider">Financial Impact & Risk</h2>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl text-center">
+          <div class="text-3xl font-black text-red-400" id="stat-risk">€0</div>
+          <div class="text-[10px] text-slate-400 uppercase font-bold mt-1 tracking-wider">Value at Risk</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl text-center">
+          <div class="text-3xl font-black text-emerald-400" id="stat-waiting">0</div>
+          <div class="text-[10px] text-slate-400 uppercase font-bold mt-1 tracking-wider">Bookings Waiting</div>
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-2">
+        <h3 class="font-bold text-sm text-white">Cancellation Metric Summary</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">Each lesson is calculated at <strong class="text-emerald-400">€45 per person</strong>[cite: 16]. Automated one-tap rebooking eliminates 3 hours of manual phone calls per weather-cancelled day[cite: 16].</p>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="max-w-md mx-auto px-4 mt-8 text-center pb-8">
+    <button onclick="resetData()" class="text-xs text-slate-500 hover:text-slate-300 underline font-semibold transition">Reset Demo Data</button>
+  </div>
+
+<script>
+const initialRecords = [
+  { id: 1, time: '09:00 AM', name: "Aoife Murphy Group", size: 4, status: 'booked', hoursWaiting: 12 },
+  { id: 2, time: '10:00 AM', name: "Liam O'Connor Party", size: 6, status: 'booked', hoursWaiting: 24 },
+  { id: 3, time: '11:00 AM', name: "Dublin Hen Party", size: 8, status: 'booked', hoursWaiting: 52 },
+  { id: 4, time: '12:30 PM', name: "Seán & Friends", size: 3, status: 'booked', hoursWaiting: 6 },
+  { id: 5, time: '02:00 PM', name: "Lahinch Summer Camp", size: 10, status: 'booked', hoursWaiting: 36 },
+  { id: 6, time: '03:30 PM', name: "Niamh's Private Lesson", size: 2, status: 'booked', hoursWaiting: 4 },
+  { id: 7, time: '04:30 PM', name: "Erasmus Student Group", size: 7, status: 'booked', hoursWaiting: 55 },
+  { id: 8, time: '06:00 PM', name: "Evening Sunset Session", size: 5, status: 'booked', hoursWaiting: 8 }
+];
+
+let records = [];
+
+function loadData() {
+  const saved = localStorage.getItem('atlantic_edge_v3');
+  if (saved) {
+    try { records = JSON.parse(saved); } catch(e) { records = JSON.parse(JSON.stringify(initialRecords)); }
+  } else {
+    records = JSON.parse(JSON.stringify(initialRecords));
+  }
+}
+
+function saveData() {
+  localStorage.setItem('atlantic_edge_v3', JSON.stringify(records));
+  render();
+}
+
+function switchTab(tab) {
+  ['today', 'rebook', 'money'].forEach(t => {
+    document.getElementById('view-' + t).classList.add('hidden');
+    document.getElementById('btn-' + t).className = 'py-3 rounded-xl text-slate-400 hover:text-white transition active:scale-95';
+  });
+  document.getElementById('view-' + tab).classList.remove('hidden');
+  document.getElementById('btn-' + tab).className = 'py-3 rounded-xl bg-emerald-500 text-slate-950 font-black transition active:scale-95';
+}
+
+function cancelBooking(id) {
+  records = records.map(r => r.id === id ? {...r, status: 'cancelled'} : r);
+  saveData();
+}
+
+function rebookBooking(id) {
+  records = records.map(r => r.id === id ? {...r, status: 'rebooked'} : r);
+  saveData();
+}
+
+function cancelAll() {
+  records = records.map(r => r.status === 'booked' ? {...r, status: 'cancelled'} : r);
+  saveData();
+}
+
+function resetData() {
+  localStorage.removeItem('atlantic_edge_v3');
+  records = JSON.parse(JSON.stringify(initialRecords));
+  saveData();
+}
+
+function render() {
+  const todayList = document.getElementById('today-list');
+  const activeRecords = records.filter(r => r.status === 'booked' || r.status === 'cancelled');
+
+  if (activeRecords.length === 0) {
+    todayList.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl text-center text-slate-500 text-sm">All 8 sessions are rebooked! Click "Reset Demo Data" to restart.</div>`;
+  } else {
+    todayList.innerHTML = activeRecords.map(r => `
+      <div class="bg-slate-900 border ${r.status === 'cancelled' ? 'border-red-500/50 bg-red-950/20' : 'border-slate-800'} p-4 rounded-2xl flex justify-between items-center transition">
+        <div>
+          <div class="text-xs text-emerald-400 font-bold">${r.time}</div>
+          <div class="font-black text-white text-base">${r.name}</div>
+          <div class="text-xs text-slate-400">${r.size} surfers • €${r.size * 45}</div>
+        </div>
+        <div>
+          ${r.status === 'booked' 
+            ? `<button onclick="cancelBooking(${r.id})" class="px-5 py-3 rounded-xl bg-red-500/20 text-red-300 font-black text-sm border border-red-500/40 active:scale-95 transition">Cancel</button>`
+            : `<span class="text-xs font-bold text-red-400 bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20">Cancelled</span>`
+          }
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const rebookList = document.getElementById('rebook-list');
+  const cancelledRecords = records.filter(r => r.status === 'cancelled');
+
+  if (cancelledRecords.length === 0) {
+    rebookList.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl text-center text-slate-500 text-sm">No cancelled bookings waiting. Tap "Cancel" on any session in the Today tab!</div>`;
+  } else {
+    rebookList.innerHTML = cancelledRecords.map(r => {
+      const isRed = r.hoursWaiting > 48;
+      return `
+        <div class="bg-slate-900 border ${isRed ? 'border-red-500 bg-red-950/40' : 'border-slate-800'} p-4 rounded-2xl space-y-2 transition">
+          <div class="flex justify-between items-center gap-2">
+            <div>
+              <div class="font-black text-white text-base">${r.name}</div>
+              <div class="text-xs ${isRed ? 'text-red-400 font-bold' : 'text-slate-400'}">
+                ${isRed ? '🚨 Pending > 48h (Action Required)' : `Waiting: ${r.hoursWaiting}h`} • ${r.size} surfers (€${r.size * 45})
+              </div>
+            </div>
+            <button onclick="rebookBooking(${r.id})" class="px-4 py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs active:scale-95 transition whitespace-nowrap">One-Tap Rebook</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const riskTotal = records.filter(r => r.status === 'cancelled').reduce((acc, r) => acc + (r.size * 45), 0);
+  const waitingCount = records.filter(r => r.status === 'cancelled').length;
+  document.getElementById('stat-risk').innerText = '€' + riskTotal;
+  document.getElementById('stat-waiting').innerText = waitingCount;
+}
+
+loadData();
+render();
+</script>
+</body>
+</html>
